@@ -190,7 +190,8 @@ def do_predict(cfg,
                evaluator=R1_mAP_eval(50, max_rank=50, feat_norm='yes'),
                device='cuda',
                img_path_list=[],
-               gallery_labels=[]):
+               gallery_labels=[],
+               add_feature=False,):
 
     img_names = []
     data_transform = T.Compose([
@@ -221,7 +222,7 @@ def do_predict(cfg,
         # t3 = time_sync()
         # print("update time: ", t3 - t2)
         t3 = time_synchronized()
-        label_predicts = evaluator.compute(is_pridect=True, num_query=pic_num)
+        label_predicts = evaluator.compute(is_pridect=True, num_query=pic_num, add_feature=add_feature, img_path=img_path_list)
         t4 = time_synchronized()
         print('transformer time:', t4-t3)
         evaluator.delete()

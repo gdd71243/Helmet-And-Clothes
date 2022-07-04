@@ -91,6 +91,16 @@ def eval_func(distmat, q_pids, g_pids, q_camids, g_camids, max_rank=50, is_pride
 
     return all_cmc, mAP
 
+def compute_min_distance(dismat, q_pids, g_pids, img_path):
+    for i, line in enumerate(dismat):
+        q_pid = q_pids[i]
+        min_distance_index = 0
+        for j, ele in enumerate(line):
+            if i != j and ele < line[min_distance_index]:
+                min_distance_index = j
+        if dismat[i][min_distance_index] < 0.01:
+            print(img_path[i][-20:], img_path[min_distance_index][-20:], dismat[i][min_distance_index])
+    return False
 
 class R1_mAP_eval():
     def __init__(self, num_query, max_rank=50, feat_norm=True, reranking=False):
@@ -120,7 +130,7 @@ class R1_mAP_eval():
         self.pids.extend(np.asarray(pid))
         self.camids.extend(np.asarray(camid))
 
-    def compute(self, is_pridect=False, num_query=50):  # called after each epoch
+    def compute(self, is_pridect=False, num_query=50, add_feature=False, img_path=[]):  # called after each epoch
         feats = torch.cat(self.feats, dim=0)
         if not self.get_num_gallery:
             self.num_gallery = len(feats) - num_query
@@ -128,9 +138,8 @@ class R1_mAP_eval():
         if self.feat_norm:
             print("The test feature is normalized")
             feats = torch.nn.functional.normalize(feats, dim=1, p=2)  # along channel
-        if is_pridect:
-            
-            
+        if add_feature or is_pridect:
+            self.num_gallery = self.num_gallery
             # query
             gf = feats[:self.num_gallery]
             g_pids = np.asarray(self.pids[:self.num_gallery])
@@ -140,7 +149,6 @@ class R1_mAP_eval():
             q_pids = np.asarray(self.pids[self.num_gallery:])
             q_camids = np.asarray(self.camids[self.num_gallery:])
         else:
-
             # query
             qf = feats[:self.num_query]
             q_pids = np.asarray(self.pids[:self.num_query])
@@ -159,10 +167,13 @@ class R1_mAP_eval():
             print('=> Computing DistMat with euclidean_distance')
             distmat = euclidean_distance(qf, gf)
         # return eval_func(distmat, q_pids, g_pids, q_camids, g_camids)
-        if is_pridect:
+        if add_feature:
+            return compute_min_distance(distmat, q_pids, g_pids, img_path)
+        elif is_pridect:
             return eval_func(distmat, q_pids, g_pids, q_camids, g_camids, is_pridect=True)
         cmc, mAP = eval_func(distmat, q_pids, g_pids, q_camids, g_camids)
         return cmc, mAP, distmat, self.pids, self.camids, qf, gf
+
 
 
 

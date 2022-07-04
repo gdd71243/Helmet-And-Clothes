@@ -79,6 +79,7 @@ class Predict:
                     self.device,
                     self.img_path_list,
                     self.gallery_labels,
+                    add_feature=False,
                    )
 
 
